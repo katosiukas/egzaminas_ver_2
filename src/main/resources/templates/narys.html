@@ -1,0 +1,373 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.niekam.nieko">
+<head>
+
+    <title>Nariai</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/black-tie/jquery-ui.css">
+	
+<style>
+					
+		/* formos stilius */
+					
+	label, input { display:block; }
+	input.text { margin-bottom:12px; width:95%; padding: .4em; }
+	fieldset { padding:0; border:0; margin-top:25px; }
+	h1 { font-size: 1.2em; margin: .6em 0; }
+	div#users-contain { width: 350px; margin: 20px 0; }
+	div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+	div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+	.ui-dialog .ui-state-error { padding: .3em; }
+	.validateTips { border: 1px solid transparent; padding: 0.3em; }
+			
+	.anuliuotas {
+		color: red;
+	}
+	
+	.redaguoti {
+		color: green;
+	}
+	
+	form input {
+    display: inline-block;
+	}
+	
+</style>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" 
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" 
+	crossorigin="anonymous">
+</script>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+<script>
+
+$(document).ready ( function() {
+
+	var id_narys;
+	var id_klubas_nario;
+	
+	pasiimtiNarius()
+
+function pasiimtiNarius() {
+									
+		$.ajax(
+			{
+				url: "http://localhost:8080/restfull/all_nariai" 
+														
+			})
+			
+		.done(	function( data ) {	
+			
+			res_str = '<table align="center">'
+				+ '<tr><th>ID</th><th>Vardas</th><th>Pavarde</th><th>Gimimo data</th><th>Miestas</th><th>Lytis</th><th>Klubas</th></tr>';
+									
+			for ( i = 0; i < data.length; i++) {
+						
+				res_str += '<tr class="s' + data [ i ].pavadinimas  + '"data-vardas="' + data[i].vardas + '"data-pavarde="' + data[i].pavarde + '" data-id="' + data [ i ].id  + '" data-gimimo_data="' + data [ i ].gimimo_data  + '" data-miestas="' + data [ i ].miestas + '" data-lytis="' + data [ i ].lytis + '" data-klubo_id="' + data [ i ].klubo_id  +'" >'
+						+ '<td>' + data [ i ].id + '</td>' 
+						+ '<td>' + data [ i ].vardas + '</td>'
+						+ '<td>' + data [ i ].pavarde + '</td>'
+						+ '<td>' + data [ i ].gimimo_data + '</td>'
+						+ '<td>' + data [ i ].miestas + '</td>'
+						+ '<td>' + data [ i ].lytis + '</td>'
+						+ '<td>' + data [ i ].klubo_id + '</td>';
+				
+				res_str += '<td><input type="button" class="redaguoti" value="Redaguoti"></td>'
+				res_str += '<td><input type="button" class="anuliuotas" value="Naikinti"></td>'
+				res_str += '<td><input type="button" class="klubas" value="Klubas"></td>'
+				res_str += '<td><a href="/nario_sakos?id=' + data [ i ].id  +'" class="s_sakos">Sporto sakos</a></td>'
+				res_str += '</tr>';
+			}
+						
+			res_str += '</table>'
+			
+			$( '#nariai' ).html ( res_str );
+									
+			$( '.klubas').on ('click', function() {
+			
+				id_klubas_nario = $( this ).parent().parent().data( 'id' );
+				pasiimtiKluba();
+			
+			});
+			
+			$( '.anuliuotas' ).on ( 'click', function() {
+						
+				id_narys = $( this ).parent().parent().data( 'id' );
+				trintiNary(id_narys);							
+			});
+			
+			$('.redaguoti').on ('click', function() {
+				
+				pasiimtiKlubuSarasa();
+				
+				id_narys = $( this ).parent().parent().data( 'id' );
+				$( '#vardas' ).val ( $( this ).parent().parent().data( 'vardas' ) );
+				$( '#pavarde' ).val ( $( this ).parent().parent().data( 'pavarde' ) );
+				$( '#gimimo_data' ).val ( $( this ).parent().parent().data( 'gimimo_data' ) );
+				$( '#miestas' ).val ( $( this ).parent().parent().data( 'miestas' ) );
+				$( '#lytis' ).val ( $( this ).parent().parent().data( 'lytis' ) );
+				$( '#klubas' ).val ( $( this ).parent().parent().data( 'klubas' ) );
+			});
+			
+		});
+}
+
+function pasiimtiKlubuSarasa() {
+	
+	$( 'select#dropdown' ).html('');
+	
+	$.ajax(
+			{
+				url: "http://localhost:8080/restfull/all_klubai"
+														
+			})
+			
+		.done(	function( data ) {	
+		
+			for ( i = 0; i < data.length; i++) {
+	
+				$( 'select#dropdown' ).append(  '<option value="' + data [ i ].id + '">' + data [ i ].pavadinimas + '</option>');
+			}	
+			
+		});
+	
+	red_narys.dialog( "open" );
+
+}
+
+function pasiimtiKlubuSarasaDar() {
+	
+	$( 'select#dropdown' ).html('');
+	
+	$.ajax(
+			{
+				url: "http://localhost:8080/restfull/all_klubai"
+														
+			})
+			
+		.done(	function( data ) {	
+		
+			for ( i = 0; i < data.length; i++) {
+	
+				$( 'select#dropdown' ).append(  '<option value="' + data [ i ].id + '">' + data [ i ].pavadinimas + '</option>');
+			}	
+			
+		});
+	
+	prideti_nary.dialog( "open" );
+
+}
+		
+function pasiimtiKluba() {
+									
+		$.ajax(
+			{
+				url: "http://localhost:8080/restfull/narys?id=" + id_klubas_nario 
+														
+			})
+			
+		.done(	function( data ) {	
+		
+			alert("Pavadinimas: " + data.sporto_klubas.pavadinimas);
+								
+		});
+		
+}
+		
+function trintiNary (id) {
+	
+	params_str = 'id=' + id;  
+		
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/del_narys?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiNarius();
+	});
+}	
+
+
+red_narys = $( "#dialog-form" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 400,
+		modal: true,
+		buttons: {
+        "Išsaugoti pakeitimus": edit_narys,
+        Uždaryti: function() {
+         red_narys.dialog( "close" );
+        }
+		},
+});
+
+prideti_nary = $( "#dialog-form1" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 380,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_narys,
+        Uždaryti: function() {
+         prideti_nary.dialog( "close" );
+        }
+		},
+});	
+
+
+function edit_narys() {
+		
+	lytis =	$('input[name=lytis]:checked').val();	
+	//	alert(lytis);
+		
+	redaguotas = {
+				
+		id: parseInt ( $( '#id' ).val()	)
+		, vard: $( '#vardas' ).val()
+		, pavar: $( '#pavarde' ).val() 
+		, gimdat: $( '#gimimo_data' ).val()
+		, miest: $( '#miestas' ).val()
+		, idk: parseInt ( $( '#dropdown' ).val() )		
+	}
+			
+	params_str = 
+	
+		"id=" + id_narys
+		+ "&vardas="  + redaguotas.vard 
+		+ '&pavarde=' + redaguotas.pavar
+		+ '&gimimo_data=' + redaguotas.gimdat
+		+ '&miestas=' + redaguotas.miest
+		+ '&lytis=' + lytis
+		+ '&klubo_id=' + redaguotas.idk
+								
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/edit_narys?" + params_str
+		}
+	)
+	.done( function( data ) {
+			
+		pasiimtiNarius();
+			
+	});
+		
+	red_narys.dialog( "close" );
+	
+}		
+		
+function add_narys() {
+	
+	lyti =	$('input[name=lyti]:checked').val();
+	
+	redaguotas = {
+				
+		varda: $( '#varda' ).val()
+		, pavard: $( '#pavard' ).val() 
+		, gimdata: $( '#gimdata' ).val()
+		, miesta: $( '#miesta' ).val()
+		, idk: parseInt ( $( '#dropdown' ).val() )		
+	}
+			
+	params_str = 
+	
+		"vardas="  + redaguotas.varda 
+		+ '&pavarde=' + redaguotas.pavard
+		+ '&gimimo_data=' + redaguotas.gimdata
+		+ '&miestas=' + redaguotas.miesta
+		+ '&lytis=' + lyti
+		+ '&klubo_id=' + redaguotas.idk
+								
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/add_narys?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiNarius();
+			
+	});
+		
+	prideti_nary.dialog( "close" );
+
+}
+
+$( "#itraukti" ).on( "click", function() { pasiimtiKlubuSarasaDar() });
+
+});
+</script>
+</head>
+
+<body>
+<a href="http://localhost:8080/klubas">Klubai</a>
+<div id="dialog-form" title="Redaguoti nary">
+	<form>
+    <fieldset>
+	
+		<label for="vardas">Vardas</label>
+		<input type="text" name="vard" id="vardas" value="vard" class="text">
+	  
+		<label for="pavar">Pavarde</label>
+		<input type="text" name="pavar" id="pavarde" value="pavar" class="text">
+	   
+		<label for="gimdat">Gimimo data</label>
+		<input type="date" name="gimdat" id="gimimo_data" value="gimdat" class="text">
+		
+		<label for="miest">Miestas</label>
+		<input type="text" name="miest" id="miestas" value="miest" class="text">
+		
+		<input type="radio" id="Choice1" name="lytis" value="vyras">Vyras
+		<input type="radio" id="Choice2" name="lytis" value="moteris">Moteris
+
+		<label for="dropdown">Pasirink kluba</label>
+		<select name="klub" id="dropdown">
+			<option value=""></option>
+		</select>
+		
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+	
+	<div id="dialog-form1" title="Itraukti nari">
+	<form>
+    <fieldset>
+	
+	  <label for="varda">Vardas</label>
+		<input type="text" name="varda" id="varda" value=" " class="text">
+	  
+		<label for="pavard">Pavarde</label>
+		<input type="text" name="pavard" id="pavard" value=" " class="text">
+	   
+		<label for="gimdata">Gimimo data</label>
+		<input type="date" name="gimdata" id="gimdata" value=" " class="text">
+		
+		<label for="miesta">Miestas</label>
+		<input type="text" name="miesta" id="miesta" value=" " class="text">
+		
+		<input type="radio" id="Choice3" name="lyti" value="vyras">Vyras
+		<input type="radio" id="Choice4" name="lyti" value="moteris">Moteris
+	   
+		<label for="dropdown">Pasirink kluba</label>
+		<select name="klub" id="dropdown">
+			<option value=""></option>
+		</select>
+			
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+
+<div id="nariai"></div>
+
+
+
+<p><label for="itraukti"></label><input class="itraukti" type="button" value="Įtraukti naują" id="itraukti" title="Įtraukti naują"></p>
+
+
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.niekam.nieko">
+<head>
+
+    <title>Vieno nario sporto sakos</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/black-tie/jquery-ui.css">
+	
+<style>
+					
+		/* formos stilius */
+					
+	label, input { display:block; }
+	input.text { margin-bottom:12px; width:95%; padding: .4em; }
+	fieldset { padding:0; border:0; margin-top:25px; }
+	h1 { font-size: 1.2em; margin: .6em 0; }
+	div#users-contain { width: 350px; margin: 20px 0; }
+	div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+	div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+	.ui-dialog .ui-state-error { padding: .3em; }
+	.validateTips { border: 1px solid transparent; padding: 0.3em; }
+			
+	.anuliuotas {
+		color: red;
+	}
+	
+	.redaguoti {
+		color: green;
+	}
+	
+</style>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" 
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" 
+	crossorigin="anonymous">
+</script>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+<script>
+
+$(document).ready ( function() {
+
+	var id;
+	var id_saka;
+	var id_klubo;
+	var id_narys;
+	var pasirinkta_saka = [];
+	
+	searchParams = new URLSearchParams(window.location.search);
+		
+		if ( searchParams.has( 'id' )  ) {
+		
+			id = searchParams.get( 'id' )
+		}
+
+	pasiimtiNarioSakas();
+
+	function pasiimtiNarioSakas() {
+	
+		$.ajax(
+			{
+				url: "http://localhost:8080/restfull/nario_saka?nariai_id=" + id 
+														
+			})
+			
+		.done(	function( data ) {
+
+			res_str = '<table>'
+				+ '<tr><th>ID</th><th>Sporto saka</th></tr>';
+									
+			for ( i = 0; i < data.length; i++) {
+						
+				res_str += '<tr class="s' + data[ i ].id  + '"data-saka="' + data[i].saka + '"data-narionr="' + data[i].narionr + '" data-id="' + data[ i ].id + '">'
+						+ '<td>' + data[ i ].id + '</td>' 
+						+ '<td>' + data[ i ].saka + '</td>';
+										
+				res_str += '<td><input type="button" class="redaguoti" value="Pakeisti"></td>'
+				res_str += '<td><input type="button" class="anuliuotas" value="Naikinti"></td>'
+				res_str += '</tr>';
+			}
+						
+			res_str += '</table>'
+			
+			$( '#sakos' ).html ( res_str );
+						
+			$( '.anuliuotas' ).on ( 'click', function() {
+						
+				id_narys = $( this ).parent().parent().data( 'id' );
+				trintiSakaN(id_saka);							
+			});
+			
+			$('.redaguoti').on ('click', function() {
+				
+				pasiimtiNarioKluboSakas();
+				
+				id_saka = $( this ).parent().parent().data( 'id' );
+							
+			});
+			
+		});
+}
+		
+function trintiSakaN (id) {
+	
+	params_str = 'id=' + id_narys;  
+		
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/del_saka_n?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiNarioSakas();
+	});
+}	
+
+function pasiimtiNarioKluboSakas() {
+	
+	$( 'select#dropdown' ).html('');
+	
+	$.ajax(
+			{
+				url: "http://localhost:8080/restfull/narys?id=" + id
+														
+			})
+			
+		.done(	function( data ) {	
+		
+			for ( i = 0; i < data.sporto_klubas.sporto_sakos.length; i++) {
+	
+				$( 'select#dropdown' ).append(  '<option value="' + data.sporto_klubas.sporto_sakos [ i ].id + '">' + data.sporto_klubas.sporto_sakos [ i ].saka + '</option>');
+			
+				pasirinkta_saka[ data.sporto_klubas.sporto_sakos [ i ].id ]=data.sporto_klubas.sporto_sakos [ i ].saka;
+			
+			}
+		
+		});
+		
+	red_saka.dialog("open");	
+}
+
+function pasiimtiNarioKluboSakas2() {
+	
+	$( 'select#dropdown2' ).html('');
+	
+	$.ajax(
+			{
+				url: "http://localhost:8080/restfull/narys?id=" + id
+														
+			})
+			
+		.done(	function( data ) {	
+		
+			for ( i = 0; i < data.sporto_klubas.sporto_sakos.length; i++) {
+	
+				$( 'select#dropdown2' ).append(  '<option value="' + data.sporto_klubas.sporto_sakos [ i ].id + '">' + data.sporto_klubas.sporto_sakos [ i ].saka + '</option>');
+			
+				pasirinkta_saka[ data.sporto_klubas.sporto_sakos [ i ].id ]=data.sporto_klubas.sporto_sakos [ i ].saka;
+			
+			}
+		
+		});
+		
+	prideti_saka.dialog("open");	
+}
+
+red_saka = $( "#dialog-form" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 400,
+		modal: true,
+		buttons: {
+        "Išsaugoti pakeitimus": edit_saka_n,
+        Uždaryti: function() {
+         red_saka.dialog( "close" );
+        }
+		},
+});
+
+prideti_saka = $( "#dialog-form1" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 380,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_saka_n,
+        Uždaryti: function() {
+         prideti_saka.dialog( "close" );
+        }
+		},
+});	
+
+
+function edit_saka_n() {
+	
+	vardas = parseInt( $( '#dropdown' ).val() );
+		
+	redaguotas = {
+				
+		vard: pasirinkta_saka[vardas]
+	}
+			
+	params_str = 
+	
+		"id=" + id_saka
+		+ "&saka="  + redaguotas.vard 
+												
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/edit_saka_n?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiNarioSakas();
+			
+	});
+		
+	red_saka.dialog( "close" );
+	
+}		
+		
+function add_saka_n() {
+
+	vardas2 = parseInt( $( '#dropdown2' ).val() );
+		
+	redaguotas = {
+				
+		vard2: pasirinkta_saka[vardas2]
+	}
+			
+	params_str = 
+	
+		"saka="  + redaguotas.vard2
+		+ '&narionr=' + id
+								
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/add_saka_n?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiNarioSakas();
+			
+	});
+		
+	prideti_saka.dialog( "close" );
+
+}
+
+$( "#itraukti" ).on( "click", function() { pasiimtiNarioKluboSakas2() });
+
+});
+</script>
+</head>
+
+<body>
+
+<a href="http://localhost:8080/narys">Nariai</a>
+	
+	<div id="dialog-form" title="Pakeisti sporto saka">
+	<form>
+    <fieldset>
+	
+		<label for="dropdown">Pasirink sporto saka</label>
+		<select name="klub" id="dropdown">
+			<option value=""></option>
+	  			   					
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+	
+	<div id="dialog-form1" title="Itraukti nauja sporto saka">
+	<form>
+    <fieldset>
+	
+		<label for="dropdown2">Pasirink sporto saka</label>
+		<select name="klub" id="dropdown2">
+			<option value=""></option>
+	  			   					
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+
+<div id="sakos"></div>
+
+<p><label for="itraukti"></label><input class="itraukti" type="button" value="Įtraukti naują" id="itraukti" title="Įtraukti naują"></p>
+
+</body>
+</html>

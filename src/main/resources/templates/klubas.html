@@ -1,0 +1,320 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.niekam.nieko">
+<head>
+
+    <title>Klubas</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/black-tie/jquery-ui.css">
+	
+<style>
+					
+		/* formos stilius */
+					
+	label, input { display:block; }
+	input.text { margin-bottom:12px; width:95%; padding: .4em; }
+	fieldset { padding:0; border:0; margin-top:25px; }
+	h1 { font-size: 1.2em; margin: .6em 0; }
+	div#users-contain { width: 350px; margin: 20px 0; }
+	div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+	div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+	.ui-dialog .ui-state-error { padding: .3em; }
+	.validateTips { border: 1px solid transparent; padding: 0.3em; }
+			
+	.anuliuotas {
+		color: red;
+	}
+	
+	.redaguoti {
+		color: green;
+	}
+	
+</style>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" 
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" 
+	crossorigin="anonymous">
+</script>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+<script>
+
+$(document).ready ( function() {
+
+	var id_klubas;
+	var id_klubas_n;
+	
+	pasiimtiKlubus()
+
+function pasiimtiKlubus() {
+									
+		$.ajax(
+			{
+				url: "http://localhost:8080/restfull/all_klubai" 
+														
+			})
+			
+		.done(	function( data ) {	
+			
+			res_str = '<table align="center">'
+				+ '<tr><th>ID</th><th>Pavadinimas</th><th>Adresas</th><th>Savininkas</th></tr>';
+									
+			for ( i = 0; i < data.length; i++) {
+				
+				disabled = '';
+						
+				if ( data[ i ].nariai.length > 0 ) {
+							
+					disabled = ' disabled ';
+				}
+				
+				res_str += '<tr class="s' + data [ i ].pavadinimas  + '"data-pavadinimas="' + data[i].pavadinimas + '"data-adresas="' + data[i].adresas + '" data-id="' + data [ i ].id + '"data-savininkas="' + data[i].savininkas + '" >'
+						+ '<td>' + data [ i ].id + '</td>' 
+						+ '<td>' + data [ i ].pavadinimas + '</td>'
+						+ '<td>' + data [ i ].adresas + '</td>'
+						+ '<td>' + data [ i ].savininkas + '</td>';
+				
+				res_str += '<td><input type="button" class="redaguoti" value="Redaguoti"></td>'
+				res_str += '<td><input type="button" class="anuliuotas" value="Naikinti"' + disabled +'></td>'
+				res_str += '<td><a href="/klubo_nariai?id=' + data [ i ].id  +'" class="nariai">Nariai</a></td>'
+				res_str += '<td><a href="/sporto_sakos?id=' + data [ i ].id  +'" class="s_sakos">Sporto sakos</a></td>'
+				res_str += '</tr>';
+			}
+						
+			res_str += '</table>'
+			
+			$( '#klubai' ).html ( res_str );
+			
+			$( '.nariai').on ('click', function() {
+				
+				id_klubas_n = $( this ).parent().parent().data('id');
+				pasiimtiNarius();
+				
+			});
+			
+			$( '.anuliuotas' ).on ( 'click', function() {
+						
+				id_klubas = $( this ).parent().parent().data( 'id' );
+				trintiKluba(id_klubas);							
+			});
+			
+			$('.redaguoti').on ('click', function() {
+				
+				red_klubas.dialog( "open" );
+							
+				id_klubas = $( this ).parent().parent().data( 'id' );
+				$( '#pavadinimas' ).val ( $( this ).parent().parent().data( 'pavadinimas' ) );
+				$( '#adresas' ).val ( $( this ).parent().parent().data( 'adresas' ) );
+				$( '#savininkas' ).val ( $( this ).parent().parent().data( 'savininkas' ) );
+				
+			});
+			
+		});
+}
+		
+function pasiimtiNarius() {
+
+	$.ajax(
+			{
+				url: "http://localhost:8080/restfull/klubas?id=" + id_klubas_n 
+														
+			})
+			
+		.done(	function( data ) {	
+		
+	//	$( "#nariu_sarasas" ).dialog("open");
+		
+		if ( data.nariai.length > 0 )	{
+			
+				$("#nariu_sarasas").dialog("open");
+				
+				i=0;
+				nariai = " ";
+				
+				while (i < data.nariai.length) {
+			
+					nariai = nariai + " " + data.nariai[i].vardas + " " + data.nariai[i].pavarde + "</br>";
+					i++;
+					
+				}
+				
+				$( '#nariu' ).html ( nariai );
+				
+			}
+			
+			else {
+				
+				alert("Šitam klubui nariu nepriskirta.");
+			}
+		
+	});
+}
+
+$( "#nariu_sarasas" ).dialog({
+		
+		autoOpen: false,
+
+});		
+	
+function trintiKluba (id) {
+	
+	params_str = 'id=' + id;  
+		
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/del_klubas?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiKlubus();
+	});
+}	
+
+
+red_klubas = $( "#dialog-form" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 400,
+		modal: true,
+		buttons: {
+        "Išsaugoti pakeitimus": edit_klubas,
+        Uždaryti: function() {
+         red_klubas.dialog( "close" );
+        }
+		},
+});
+
+prideti_kluba = $( "#dialog-form1" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 380,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_klubas,
+        Uždaryti: function() {
+         prideti_kluba.dialog( "close" );
+        }
+		},
+});	
+
+
+function edit_klubas() {
+		
+	redaguotas = {
+				
+		id: parseInt ( $( '#id' ).val()	)
+		, pav: $( '#pavadinimas' ).val()
+		, adresas: $( '#adresas' ).val() 
+		, savininkas: $( '#savininkas' ).val()
+				
+	}
+			
+	params_str = 
+	
+		"id=" + id_klubas
+		+ "&pavadinimas="  + redaguotas.pav 
+		+ '&adresas=' + redaguotas.adresas
+		+ '&savininkas=' + redaguotas.savininkas
+								
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/edit_klubas?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiKlubus();
+			
+	});
+		
+	red_klubas.dialog( "close" );
+	
+}		
+		
+function add_klubas() {
+
+	redaguotas = {
+				
+		pava: $( '#pavadinima' ).val()
+		, adresa: $( '#adra' ).val() 
+		, savin: $( '#savin' ).val() 
+				
+	}
+			
+	params_str = 
+	
+		"pavadinimas="  + redaguotas.pava 
+		+ '&adresas=' + redaguotas.adresa 
+		+ '&savininkas=' + redaguotas.savin
+								
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/add_klubas?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiKlubus();
+			
+	});
+		
+	prideti_kluba.dialog( "close" );
+
+}
+
+$( "#itraukti" ).on( "click", function() { prideti_kluba.dialog("open"); });
+
+});
+</script>
+</head>
+
+<body>
+<a href="http://localhost:8080/narys">Nariai</a>
+<div id="dialog-form" title="Redaguoti kluba">
+	<form>
+    <fieldset>
+	
+	  <label for="pav">Pavadinimas</label>
+      <input type="text" name="pav" id="pavadinimas" value="pavadinimas" class="text">
+	  
+      <label for="adr">Adresas</label>
+      <input type="text" name="adr" id="adresas" value="adresas" class="text">
+	  
+	  <label for="sav">Savininkas</label>
+      <input type="text" name="sav" id="savininkas" value="savininkas" class="text">
+	  	                 
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+	
+	<div id="dialog-form1" title="Itraukti nauja kluba">
+	<form>
+    <fieldset>
+	
+	  <label for="pav">Pavadinimas</label>
+      <input type="text" name="pava" id="pavadinima" value="pavadinima" class="text">
+	  
+      <label for="adra">Adresas</label>
+      <input type="text" name="adra" id="adra" value="adra" class="text">
+	   
+	  <label for="savi">Savininkas</label>
+      <input type="text" name="savi" id="savin" value="savin" class="text"> 
+		
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+
+<div id="klubai"></div>
+
+<div id="nariu_sarasas" >
+	<p><div id="nariu" ></div></p>
+</div>
+
+<p><label for="itraukti"></label><input class="itraukti" type="button" value="Įtraukti naują" id="itraukti" title="Įtraukti naują"></p>
+
+
+</body>
+</html>

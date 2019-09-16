@@ -1,0 +1,242 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.niekam.nieko">
+<head>
+
+    <title>Vieno klubo sporto sakos</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/black-tie/jquery-ui.css">
+	
+<style>
+					
+		/* formos stilius */
+					
+	label, input { display:block; }
+	input.text { margin-bottom:12px; width:95%; padding: .4em; }
+	fieldset { padding:0; border:0; margin-top:25px; }
+	h1 { font-size: 1.2em; margin: .6em 0; }
+	div#users-contain { width: 350px; margin: 20px 0; }
+	div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+	div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+	.ui-dialog .ui-state-error { padding: .3em; }
+	.validateTips { border: 1px solid transparent; padding: 0.3em; }
+			
+	.anuliuotas {
+		color: red;
+	}
+	
+	.redaguoti {
+		color: green;
+	}
+	
+</style>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" 
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" 
+	crossorigin="anonymous">
+</script>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+<script>
+
+$(document).ready ( function() {
+
+	var id;
+	var id_saka;
+	
+	searchParams = new URLSearchParams(window.location.search);
+		
+		if ( searchParams.has( 'id' )  ) {
+		
+			id = searchParams.get( 'id' )
+		}
+
+	pasiimtiKluboSakas();
+
+	function pasiimtiKluboSakas() {
+	
+		$.ajax(
+			{
+				url: "http://localhost:8080/restfull/klubas?id=" + id 
+														
+			})
+			
+		.done(	function( data ) {
+
+			res_str = '<table>'
+				+ '<tr><th>ID</th><th>Sporto saka</th></tr>';
+									
+			for ( i = 0; i < data.sporto_sakos.length; i++) {
+						
+				res_str += '<tr class="s' + data.sporto_sakos[ i ].id  + '"data-saka="' + data.sporto_sakos[i].saka + '" data-id="' + data.sporto_sakos [ i ].id + '">'
+						+ '<td>' + data.sporto_sakos [ i ].id + '</td>' 
+						+ '<td>' + data.sporto_sakos [ i ].saka + '</td>';
+										
+				res_str += '<td><input type="button" class="redaguoti" value="Redaguoti"></td>'
+				res_str += '<td><input type="button" class="anuliuotas" value="Naikinti"></td>'
+				res_str += '</tr>';
+			}
+						
+			res_str += '</table>'
+			
+			$( '#sakos' ).html ( res_str );
+						
+			$( '.anuliuotas' ).on ( 'click', function() {
+						
+				id_narys = $( this ).parent().parent().data( 'id' );
+				trintiSaka(id_saka);							
+			});
+			
+			$('.redaguoti').on ('click', function() {
+				
+				red_saka.dialog("open");
+				id_saka = $( this ).parent().parent().data( 'id' );
+				$( '#saka' ).val ( $( this ).parent().parent().data( 'saka' ) );
+				
+				
+			});
+			
+		});
+}
+		
+function trintiSaka (id) {
+	
+	params_str = 'id=' + id;  
+		
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/del_saka?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiKluboSakas();
+	});
+}	
+
+
+red_saka = $( "#dialog-form" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 400,
+		modal: true,
+		buttons: {
+        "Išsaugoti pakeitimus": edit_saka,
+        Uždaryti: function() {
+         red_saka.dialog( "close" );
+        }
+		},
+});
+
+prideti_saka = $( "#dialog-form1" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 380,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_saka,
+        Uždaryti: function() {
+         prideti_saka.dialog( "close" );
+        }
+		},
+});	
+
+
+function edit_saka() {
+	
+	redaguotas = {
+				
+		id: parseInt ( $( '#id' ).val()	)
+		, vard: $( '#saka' ).val()
+		
+	}
+			
+	params_str = 
+	
+		"id=" + id_saka
+		+ "&saka="  + redaguotas.vard 
+		+ "&klubo_id=" + id
+										
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/edit_saka_k?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiKluboSakas();
+			
+	});
+		
+	red_saka.dialog( "close" );
+	
+}		
+		
+function add_saka() {
+
+	redaguotas = {
+				
+		varda: $( '#varda' ).val()
+						
+	}
+			
+	params_str = 
+	
+		"saka="  + redaguotas.varda 
+		+ '&klubo_id=' + id
+								
+	$.ajax(
+		{
+			url: "http://localhost:8080/restfull/add_saka_k?" + params_str
+		}
+	)
+	.done( function( data ) {
+				
+		pasiimtiKluboSakas();
+			
+	});
+		
+	prideti_saka.dialog( "close" );
+
+}
+
+$( "#itraukti" ).on( "click", function() { prideti_saka.dialog("open"); });
+
+});
+</script>
+</head>
+
+<body>
+
+<a href="http://localhost:8080/klubas">Klubai</a>
+
+<div id="dialog-form" title="Redaguoti sporto saka">
+	<form>
+    <fieldset>
+	
+		<label for="saka">Saka</label>
+		<input type="text" name="saka" id="saka" value="saka" class="text">
+	  			   		
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+	
+	<div id="dialog-form1" title="Itraukti nauja sporto saka">
+	<form>
+    <fieldset>
+	
+		<label for="varda">Sporto saka</label>
+		<input type="text" name="varda" id="varda" value=" " class="text">
+	  			   					
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+	</div>
+
+<div id="sakos"></div>
+
+<p><label for="itraukti"></label><input class="itraukti" type="button" value="Įtraukti naują" id="itraukti" title="Įtraukti naują"></p>
+
+</body>
+</html>
